@@ -1,5 +1,6 @@
 package com.example.foodrecipes.repositories;
 
+import androidx.annotation.Nullable;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -9,8 +10,8 @@ import com.example.foodrecipes.models.Recipe;
 import com.example.foodrecipes.requests.RecipeApiClient;
 
 import java.util.List;
-
 public class RecipeRepository {
+
     private static RecipeRepository instance;
     private RecipeApiClient mRecipeApiClient;
     private String mQuery;
@@ -18,26 +19,32 @@ public class RecipeRepository {
     private MutableLiveData<Boolean> mIsQueryExhausted = new MutableLiveData<>();
     private MediatorLiveData<List<Recipe>> mRecipes = new MediatorLiveData<>();
 
-    public static RecipeRepository getInstance() {
-        if (instance == null)
+    public static RecipeRepository getInstance(){
+        if(instance == null){
             instance = new RecipeRepository();
+        }
         return instance;
     }
 
-    private RecipeRepository() {
+    private RecipeRepository(){
         mRecipeApiClient = RecipeApiClient.getInstance();
         initMediators();
     }
 
-    private void initMediators() {
+    private void initMediators(){
         LiveData<List<Recipe>> recipeListApiSource = mRecipeApiClient.getRecipes();
-        mRecipes.addSource(recipeListApiSource, recipes -> {
-            if (recipes != null) {
-                mRecipes.setValue(recipes);
-                doneQuery(recipes);
-            }else {
-                // search database cash
-                doneQuery(null);
+        mRecipes.addSource(recipeListApiSource, new Observer<List<Recipe>>() {
+            @Override
+            public void onChanged(@Nullable List<Recipe> recipes) {
+
+                if(recipes != null){
+                    mRecipes.setValue(recipes);
+                    doneQuery(recipes);
+                }
+                else{
+                    // search database cache
+                    doneQuery(null);
+                }
             }
         });
     }
@@ -57,36 +64,38 @@ public class RecipeRepository {
         return mIsQueryExhausted;
     }
 
-    public LiveData<List<Recipe>> getRecipes() {
-        return mRecipeApiClient.getRecipes();
+    public LiveData<List<Recipe>> getRecipes(){
+        return mRecipes;
     }
 
-    public LiveData<Recipe> getRecipe() {
+    public LiveData<Recipe> getRecipe(){
         return mRecipeApiClient.getRecipe();
     }
 
-    public LiveData<Boolean> isRecipeRequestTimedOut() {
-        return mRecipeApiClient.isRecipeRequestTimedOut();
+    public void searchRecipeById(String recipeId){
+        mRecipeApiClient.searchRecipeById(recipeId);
     }
 
-    public void searchRecipesApi(String query, int pageNumber) {
-        if (pageNumber == 0)
+
+    public void searchRecipesApi(String query, int pageNumber){
+        if(pageNumber == 0){
             pageNumber = 1;
+        }
         mQuery = query;
         mPageNumber = pageNumber;
         mIsQueryExhausted.setValue(false);
         mRecipeApiClient.searchRecipesApi(query, pageNumber);
     }
 
-    public void searchRecipeById(String recipeId) {
-        mRecipeApiClient.searchRecipeById(recipeId);
-    }
-
-    public void searchNextPage() {
+    public void searchNextPage(){
         searchRecipesApi(mQuery, mPageNumber + 1);
     }
 
-    public void cancelRequest() {
+    public void cancelRequest(){
         mRecipeApiClient.cancelRequest();
+    }
+
+    public LiveData<Boolean> isRecipeRequestTimedOut(){
+        return mRecipeApiClient.isRecipeRequestTimedOut();
     }
 }

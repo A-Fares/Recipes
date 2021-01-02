@@ -41,6 +41,7 @@ public class RecipeListActivity extends BaseActivity implements OnRecipeListener
 
         mRecipeListViewModel = new ViewModelProvider(this).get(RecipeListViewModel.class);
 
+        Log.d(TAG, "mRecipeListViewModel on activity created " + mRecipeListViewModel.hashCode());
         initRecyclerView();
         subscribeObservers();
         initSearchView();
@@ -98,6 +99,7 @@ public class RecipeListActivity extends BaseActivity implements OnRecipeListener
                 }
             }
         });
+        Log.d(TAG, "mRecipeListViewModel in 101 " + mRecipeListViewModel.hashCode());
         mRecipeListViewModel.isQueryExhausted().observe(this, new Observer<Boolean>() {
             @Override
             public void onChanged(@Nullable Boolean aBoolean) {
